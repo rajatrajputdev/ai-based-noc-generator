@@ -1,5 +1,11 @@
 from fpdf import FPDF
 from io import BytesIO
+import unicodedata
+
+def sanitize_text(text):
+    # Normalize and remove characters not supported by latin-1
+    normalized = unicodedata.normalize("NFKD", text)
+    return normalized.encode("latin-1", "ignore").decode("latin-1")
 
 def print_line(pdf, text, line_height=10, bold=False):
     try:
@@ -19,8 +25,11 @@ def print_line(pdf, text, line_height=10, bold=False):
     pdf.multi_cell(0, line_height, text)
 
 def text_to_pdf(text):
+    from io import BytesIO
+    from fpdf import FPDF
+
     try:
-        # Handle special characters
+        # Clean up special characters
         text = (text.replace("•", "-")
                     .replace("“", '"')
                     .replace("”", '"')
@@ -30,6 +39,8 @@ def text_to_pdf(text):
                     .replace("…", "...")
                     .replace("©", "(c)"))
 
+        text = sanitize_text(text)
+
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
@@ -37,7 +48,7 @@ def text_to_pdf(text):
 
         try:
             pdf.set_font("Arial", "B", size=12)
-        except Exception:
+        except:
             pdf.set_font("Helvetica", "B", size=12)
 
         pdf.cell(0, 10, "NO OBJECTION CERTIFICATE (NOC)", 0, 1, "C")
@@ -61,7 +72,6 @@ def text_to_pdf(text):
             is_bold = any(keyword in line for keyword in bold_keywords)
             print_line(pdf, line, line_height=10, bold=is_bold)
 
-        # Output to BytesIO instead of file
         pdf_buffer = BytesIO()
         pdf.output(pdf_buffer)
         pdf_buffer.seek(0)
