@@ -62,7 +62,7 @@ if "noc_text" in st.session_state:
             f.write(st.session_state["final_text"])
 
         pdf_filename = safe_filename.replace(".txt", ".pdf")
-        success, result = text_to_pdf(st.session_state["final_text"], pdf_filename)
+        success, result = text_to_pdf(st.session_state["final_text"])
 
         if success:
             with open(pdf_filename, "rb") as f:
