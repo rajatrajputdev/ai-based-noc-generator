@@ -1,35 +1,36 @@
 from fpdf import FPDF
+from io import BytesIO
 
-def print_line(pdf, text, line_height=10, bold=False):
+def clean_text(text):
+    """
+    Replace unsupported Unicode characters with compatible equivalents.
+    """
+    return (text.replace("\u2003", " ")  # Replace em space with a normal space
+                .replace("•", "-")
+                .replace("“", '"')
+                .replace("”", '"')
+                .replace("—", "-")
+                .replace("–", "-")
+                .replace("’", "'")
+                .replace("…", "...")
+                .replace("©", "(c)"))
+
+def print_line(pdf, text, line_height=8, bold=False):
     try:
         if bold:
-            try:
-                pdf.set_font("Arial", "B", size=12)
-            except Exception:
-                pdf.set_font("Helvetica", "B", size=12)
+            pdf.set_font("Arial", "B", size=10)  # Reduced font size for bold text
         else:
-            try:
-                pdf.set_font("Arial", "", size=12)
-            except Exception:
-                pdf.set_font("Helvetica", "", size=12)
+            pdf.set_font("Arial", "", size=10)  # Reduced font size for normal text
     except Exception:
-        pdf.set_font("Helvetica", "", size=12)
+        pdf.set_font("Helvetica", "", size=10)
 
     # Using multi_cell to display the whole text in case it exceeds the page width
     pdf.multi_cell(0, line_height, text)
 
-
-def text_to_pdf(text, output_filename="noc_document.pdf"):
+def text_to_pdf(text):
     try:
-        #H Handling special characters and formatting
-        text = (text.replace("•", "-")
-                    .replace("“", '"')
-                    .replace("”", '"')
-                    .replace("—", "-")
-                    .replace("–", "-")
-                    .replace("’", "'")
-                    .replace("…", "...")
-                    .replace("©", "(c)"))
+        # Clean and format text
+        text = clean_text(text)
 
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -37,11 +38,7 @@ def text_to_pdf(text, output_filename="noc_document.pdf"):
         pdf.set_margins(15, 15, 15)
 
         # Bold font for the title
-        try:
-            pdf.set_font("Arial", "B", size=12)
-        except Exception:
-            pdf.set_font("Helvetica", "B", size=12)
-
+        pdf.set_font("Arial", "B", size=12)
         pdf.cell(0, 10, "NO OBJECTION CERTIFICATE (NOC)", 0, 1, "C")
         pdf.ln(10)
 
@@ -62,41 +59,13 @@ def text_to_pdf(text, output_filename="noc_document.pdf"):
 
         for line in text.split('\n'):
             is_bold = any(keyword in line for keyword in bold_keywords)
-            print_line(pdf, line, line_height=10, bold=is_bold)
+            print_line(pdf, line, line_height=8, bold=is_bold)
 
-        pdf.output(output_filename)
-        print(f"Your PDF '{output_filename}' is ready!")
-        return True, output_filename
+        # Save to a BytesIO object
+        pdf_output = BytesIO()
+        pdf.output(pdf_output, 'F')  # 'F' specifies that the output is written to a file-like object
+        pdf_output.seek(0)
 
+        return pdf_output
     except Exception as e:
-        print(f"Something went wrong while creating the PDF: {str(e)}")
-        return False, str(e)
-
-
-if __name__ == "__main__":
-    # Testing the logic to see if the PDF is generated correctly
-    sample_text = """NO OBJECTION CERTIFICATE (NOC)
-
-This is a sample NOC document to test PDF conversion.
-
-Guest Details:
-Name: Test Person (e.g., José, Ömer)
-Profession: Software Developer
-
-Media Rights and Usage:
-Mishka Productions and Mr. Kunal Kulkarni have the right to record, edit, and publish.
-
-Content Editing: The content can be modified.
-No Financial Claims: None.
-Non-Objection and Confidentiality: All terms are binding.
-
-Acceptance and Signature:
-Guest Signature: ___________________
-Host Signature: ___________________
-"""
-
-    success, result = text_to_pdf(sample_text, "test_noc.pdf")
-    if success:
-        print(f"PDF successfully created as {result}")
-    else:
-        print(f"Error creating PDF: {result}")
+        raise RuntimeError(f"Error creating PDF: {str(e)}")
