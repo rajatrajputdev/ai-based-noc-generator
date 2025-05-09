@@ -1,5 +1,4 @@
 import openai
-import config
 import re
 import streamlit as st
 def generate_noc(guest_name, guest_profession, company_name, host_name, recording_date,
@@ -50,7 +49,7 @@ def generate_noc(guest_name, guest_profession, company_name, host_name, recordin
 
     try:
         response = openai.ChatCompletion.create(
-            engine=config.ENGINE,
+            engine=engine,
             messages=[
                 {"role": "system", "content": "You are a legal document generator specializing in No Objection Certificates."},
                 {"role": "user", "content": prompt}
