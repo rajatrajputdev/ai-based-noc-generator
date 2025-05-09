@@ -57,16 +57,14 @@ if "noc_text" in st.session_state:
     st.session_state["final_text"] = final_text
 
     if st.button("📄 Generate PDF"):
-        safe_filename = f"NOC_{re.sub(r'[^a-zA-Z0-9_]', '_', guest_name)}.txt"
-        with open(safe_filename, "w", encoding="utf-8") as f:
-            f.write(st.session_state["final_text"])
-
-        pdf_filename = safe_filename.replace(".txt", ".pdf")
-        success, result = text_to_pdf(st.session_state["final_text"])
-
+        success, pdf_bytes = text_to_pdf(st.session_state["final_text"])
         if success:
-            with open(pdf_filename, "rb") as f:
-                st.success("✅ PDF successfully created!")
-                st.download_button("📥 Download PDF", f, file_name=pdf_filename)
+            st.success("✅ PDF successfully created!")
+            st.download_button(
+                label="📥 Download PDF",
+                data=pdf_bytes,
+                file_name=f"NOC_{re.sub(r'[^a-zA-Z0-9_]', '_', guest_name)}.pdf",
+                mime="application/pdf"
+            )
         else:
-            st.error(f"PDF generation failed: {result}")
+            st.error(f"PDF generation failed: {pdf_bytes}")
