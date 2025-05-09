@@ -3,33 +3,21 @@ from io import BytesIO
 import unicodedata
 
 def sanitize_text(text):
-    # Normalize and remove characters not supported by latin-1
     normalized = unicodedata.normalize("NFKD", text)
     return normalized.encode("latin-1", "ignore").decode("latin-1")
 
 def print_line(pdf, text, line_height=10, bold=False):
     try:
         if bold:
-            try:
-                pdf.set_font("Arial", "B", size=12)
-            except Exception:
-                pdf.set_font("Helvetica", "B", size=12)
+            pdf.set_font("Arial", "B", size=12)
         else:
-            try:
-                pdf.set_font("Arial", "", size=12)
-            except Exception:
-                pdf.set_font("Helvetica", "", size=12)
-    except Exception:
-        pdf.set_font("Helvetica", "", size=12)
-
+            pdf.set_font("Arial", "", size=12)
+    except:
+        pdf.set_font("Helvetica", "B" if bold else "", size=12)
     pdf.multi_cell(0, line_height, text)
 
 def text_to_pdf(text):
-    from io import BytesIO
-    from fpdf import FPDF
-
     try:
-        # Clean up special characters
         text = (text.replace("•", "-")
                     .replace("“", '"')
                     .replace("”", '"')
@@ -45,11 +33,7 @@ def text_to_pdf(text):
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         pdf.set_margins(15, 15, 15)
-
-        try:
-            pdf.set_font("Arial", "B", size=12)
-        except:
-            pdf.set_font("Helvetica", "B", size=12)
+        pdf.set_font("Arial", "B", size=12)
 
         pdf.cell(0, 10, "NO OBJECTION CERTIFICATE (NOC)", 0, 1, "C")
         pdf.ln(10)
@@ -72,11 +56,9 @@ def text_to_pdf(text):
             is_bold = any(keyword in line for keyword in bold_keywords)
             print_line(pdf, line, line_height=10, bold=is_bold)
 
-        pdf_buffer = BytesIO()
-        pdf.output(pdf_buffer)
-        pdf_buffer.seek(0)
-
-        return True, pdf_buffer
+        # Output PDF to bytes
+        pdf_bytes = pdf.output(dest='S').encode('latin-1')
+        return True, BytesIO(pdf_bytes)
 
     except Exception as e:
         return False, str(e)
